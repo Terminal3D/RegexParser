@@ -31,7 +31,7 @@ sealed class Attribute {
         override val name: String
     ) : Attribute() {
         override fun toString(): String {
-            return "$nt.$number.$name ∈ L($regex)"
+            return "$nt.$number.$name := lookahead ∈ L($regex)"
         }
     }
 
