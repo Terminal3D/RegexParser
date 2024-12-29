@@ -1,4 +1,4 @@
-package org.example.tokenizer
+package org.example.regexConverter.tokenizer
 
 private const val MAX_CATCH_GROUPS = 9
 

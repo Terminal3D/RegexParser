@@ -1,4 +1,4 @@
-package org.example.tokenizer
+package org.example.regexConverter.tokenizer
 
 sealed class Token(val pos: Int) {
     data class OR(val position: Int) : Token(position)

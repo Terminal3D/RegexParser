@@ -1,8 +1,8 @@
 package parser
 
-import org.example.tokenizer.Token
-import org.example.tokenizer.TokenizeException
-import org.example.tokenizer.Tokenizer
+import org.example.regexConverter.tokenizer.Token
+import org.example.regexConverter.tokenizer.TokenizeException
+import org.example.regexConverter.tokenizer.Tokenizer
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows

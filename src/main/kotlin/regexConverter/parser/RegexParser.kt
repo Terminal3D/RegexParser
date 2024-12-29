@@ -1,6 +1,6 @@
-package org.example.parser
+package org.example.regexConverter.parser
 
-import org.example.tokenizer.Token
+import org.example.regexConverter.tokenizer.Token
 
 /*
 Грамматика без левой рекурсии
@@ -27,9 +27,9 @@ object RegexParser {
     private fun next(): Token = peek().also { advance() } ?: throw Exception("Неожиданный EOL")
 
     private fun init(tokens: List<Token>) {
-        this.tokens = tokens
-        this.pos = -1
-        this.inLookAhead = false
+        RegexParser.tokens = tokens
+        pos = -1
+        inLookAhead = false
         catchGroups.clear()
     }
 
