@@ -10,7 +10,6 @@ class BFSGenerator(
     private val cfg: CFG,
 ) {
 
-
     data class QueueItem(
         val word: LinkedList<Symbol>,
         val firstNtPos: Int = 0

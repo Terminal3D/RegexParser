@@ -14,7 +14,7 @@ sealed class RegexNode {
 
     class ConcatNode(val left: RegexNode, val right: RegexNode) : RegexNode()
     class OrNode(val left: RegexNode, val right: RegexNode) : RegexNode()
-    class OptionalNode(val value: RegexNode) : RegexNode()
+    class NonCatchGroupNode(val value: RegexNode) : RegexNode()
     class KleeneStarNode(val value: RegexNode) : RegexNode()
     class LinkToCatchGroupNode(val linkedNode: RegexNode) : RegexNode()
     class NewCatchGroupNode(var value: RegexNode = DummyNode) : RegexNode()
@@ -31,7 +31,7 @@ sealed class RegexNode {
             is LinkToCatchGroupNode -> "link"
             is LookAheadNode -> "lookahead"
             is NewCatchGroupNode -> "new catch group"
-            is OptionalNode -> "?"
+            is NonCatchGroupNode -> "non catch group"
             is OrNode -> "|"
             is SymbolNode -> "[a-z]"
         }

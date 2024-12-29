@@ -3,7 +3,7 @@ package org.example.regexConverter.tokenizer
 sealed class Token(val pos: Int) {
     data class OR(val position: Int) : Token(position)
     data class RightBracket(val position: Int) : Token(position)
-    data class Optional(val position: Int) : Token(position)
+    data class NonCatchGroup(val position: Int) : Token(position)
     data class LookAhead(val position: Int) : Token(position)
     data class NewCatchGroup(val position: Int, val number: Int) : Token(position)
     data class LinkToCatchGroup(val position: Int, val number: Int) : Token(position)
@@ -13,7 +13,7 @@ sealed class Token(val pos: Int) {
     override fun toString(): String = when (this) {
         is OR -> "|"
         is RightBracket -> ")"
-        is Optional -> "(?:[rg])"
+        is NonCatchGroup -> "(?:[rg])"
         is LookAhead -> "(?=[rg])"
         is NewCatchGroup -> "([rg]), номер: $number"
         is LinkToCatchGroup -> "([num]), num: $number"

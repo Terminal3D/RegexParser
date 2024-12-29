@@ -69,7 +69,7 @@ class TokenizerTest {
         val tokens = Tokenizer.tokenize(regex)
 
         assertEquals(3, tokens.size)
-        assertEquals(Token.Optional(2), tokens[0])
+        assertEquals(Token.NonCatchGroup(2), tokens[0])
         assertEquals(Token.Symbol(3, 'a'), tokens[1])
         assertEquals(Token.RightBracket(4), tokens[2])
     }
@@ -125,7 +125,7 @@ class TokenizerTest {
 
         assertEquals(13, tokens.size)
         assertEquals(Token.Symbol(0, 'a'), tokens[0])
-        assertEquals(Token.Optional(3), tokens[1])
+        assertEquals(Token.NonCatchGroup(3), tokens[1])
         assertEquals(Token.Symbol(4, 'b'), tokens[2])
         assertEquals(Token.OR(5), tokens[3])
         assertEquals(Token.Symbol(6, 'c'), tokens[4])

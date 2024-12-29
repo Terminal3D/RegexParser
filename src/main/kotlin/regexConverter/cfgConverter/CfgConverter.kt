@@ -65,12 +65,11 @@ object CfgConverter {
                 }
             }
 
-            is RegexNode.OptionalNode -> {
+            is RegexNode.NonCatchGroupNode -> {
                 val valueNt = getNt(regexNode.value)
 
                 Pair(
                     listOf(
-                        emptyList(),
                         listOf(valueNt)
                     )
                 ) {
@@ -158,8 +157,8 @@ object CfgConverter {
             }
 
             // для парсинга встроенными реджексами
-            is RegexNode.OptionalNode -> {
-                "(" + toRegexString(node.value) + ")?"
+            is RegexNode.NonCatchGroupNode -> {
+                "(" + toRegexString(node.value) + ")"
             }
 
             is RegexNode.KleeneStarNode -> {

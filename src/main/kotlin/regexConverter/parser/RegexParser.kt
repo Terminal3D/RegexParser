@@ -114,10 +114,10 @@ object RegexParser {
                 throw Exception("Неожиданная закрывающая скобка")
             }
 
-            is Token.Optional -> {
+            is Token.NonCatchGroup -> {
                 val inside = parseRg()
                 assertRightBracket(inside)
-                RegexNode.OptionalNode(inside)
+                RegexNode.NonCatchGroupNode(inside)
             }
 
             else -> {

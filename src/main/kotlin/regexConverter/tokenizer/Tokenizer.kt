@@ -69,7 +69,7 @@ object Tokenizer {
                             bracketsBalance--
                         }
 
-                        next2Symbol == ':' -> tokens.add(Token.Optional(pos))
+                        next2Symbol == ':' -> tokens.add(Token.NonCatchGroup(pos))
                         next2Symbol == '=' -> tokens.add(Token.LookAhead(pos))
                         else -> throw TokenizeException(next2Symbol, pos)
                     }
