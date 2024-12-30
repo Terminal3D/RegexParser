@@ -253,7 +253,7 @@ class EarleyParser(private val cfg: CFG) {
                             substring.add(remainder.substring(startIndex = 0, endIndex = i + 1))
                         }
                         val ok = substring.any {
-                            matchResult.parse(it, false)
+                            matchResult.parse(it, true)
                         }
                         if (!ok) return Pair(false, currentPos)
                     }
