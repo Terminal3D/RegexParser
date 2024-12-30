@@ -69,9 +69,9 @@ class EarleyParser(private val cfg: CFG) {
 
     private lateinit var earleySets: Array<MutableSet<EarleyItem>>
 
-    fun parse(input: String): Boolean = parseAllTrees(input).isNotEmpty()
+    fun parse(input: String, checkAttr: Boolean = true): Boolean = parseAllTrees(input, checkAttr).isNotEmpty()
 
-    fun parseAllTrees(input: String): List<ParseTree> {
+    fun parseAllTrees(input: String, checkAttr: Boolean = true): List<ParseTree> {
         val tokens: List<Symbol> = input.map { ch ->
             Symbol(type = TokenType.TERMINAL, value = ch.toString())
         }
@@ -142,7 +142,9 @@ class EarleyParser(private val cfg: CFG) {
                 }
             }
         }
-        return results.filter { it.checkAttr(word = input).first }
+        return if (checkAttr) {
+            results.filter { it.checkAttr(word = input).first }
+        } else results
     }
 
     private fun closure(i: Int, tokens: List<Symbol>) {
@@ -233,18 +235,27 @@ class EarleyParser(private val cfg: CFG) {
         var currentPos = pos
 
         if (ruleIndex != null) {
-            val (rhs, attrs) = cfg.grammar[symbol]!![ruleIndex]
+            val (_, attrs) = cfg.grammar[symbol]!![ruleIndex]
 
             for (attr in attrs) {
                 when (attr) {
                     is Attribute.Lookahead -> {
                         val remainder = word.substring(currentPos)
-                        val regexObj = Regex(attr.regex)
-
-                        val matchResult = regexObj.find(remainder)
-                        if (matchResult == null || matchResult.range.first != 0) {
-                            return Pair(false, currentPos)
+                        val newGrammar = cfg.grammar.toMutableMap()
+                        newGrammar[attr.nt] = attr.looka
+                        val matchResult = EarleyParser(CFG(
+                            newGrammar,
+                            startSymbol = attr.nt,
+                            terminals = cfg.terminals
+                        ))
+                        val substring = mutableListOf<String>()
+                        for (i in remainder.indices) {
+                            substring.add(remainder.substring(startIndex = 0, endIndex = i + 1))
                         }
+                        val ok = substring.any {
+                            matchResult.parse(it, false)
+                        }
+                        if (!ok) return Pair(false, currentPos)
                     }
 
                     else -> {}

@@ -85,7 +85,7 @@ object RegexParser {
             }
 
             is Token.LinkToCatchGroup -> {
-                if (inLookAhead) throw Exception("Группа захвата внутри опережающей проверки запрещена")
+                // if (inLookAhead) throw Exception("Ссылка внутри опережающей проверки запрещена")
                 val node = catchGroups[token.number]
                     ?: throw Exception("Группа захвата #${token.number} не инициализирована")
                 RegexNode.LinkToCatchGroupNode(node)

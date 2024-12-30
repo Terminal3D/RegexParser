@@ -27,11 +27,11 @@ sealed class Attribute {
     data class Lookahead(
         val nt: String,
         val number: Int,
-        val regex: String,
+        val looka: List<Pair<List<Symbol>, List<Attribute>>>,
         override val name: String
     ) : Attribute() {
         override fun toString(): String {
-            return "$nt.$number.$name := lookahead ∈ L($regex)"
+            return "$nt.$number.$name := lookahead ∈ L($nt -> ${looka.first().first.joinToString(" ")})"
         }
     }
 

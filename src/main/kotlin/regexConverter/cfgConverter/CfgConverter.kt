@@ -8,7 +8,7 @@ object CfgConverter {
     private val ntCountMap: MutableMap<Char, Int> = mutableMapOf()
     private val cfg: MutableMap<String, List<List<String>>> = mutableMapOf()
     private val nonTerminalLetters = (('A'..'Z') - 'S').toSet()
-    private val lookaheadsMap = mutableMapOf<String, String>()
+    private val lookaheadsMap = mutableMapOf<String, List<List<String>>>()
     private var laCounter = 0
     private fun init() {
         nonTerminals.clear()
@@ -18,7 +18,7 @@ object CfgConverter {
         laCounter = 0
     }
 
-    fun convertToCFG(regex: RegexNode): Pair<Map<String, List<List<String>>>, Map<String, String>> {
+    fun convertToCFG(regex: RegexNode): Pair<Map<String, List<List<String>>>, Map<String, List<List<String>>>> {
         init()
         nonTerminals[regex] = "S"
         convert(regex)
@@ -98,12 +98,17 @@ object CfgConverter {
             is RegexNode.LookAheadNode -> {
                 val laNt = getLANt(regexNode.value)
                 Pair(listOf(listOf(laNt))) {
+                    val laNode = convert(regexNode.value)
+                    lookaheadsMap[laNt] = laNode
+                    cfg[laNt] = listOf(emptyList())
                 }
             }
 
             is RegexNode.NewCatchGroupNode -> {
                 val valueNt = getNt(regexNode.value)
-                Pair(listOf(listOf(valueNt))) { convert(regexNode.value) }
+                Pair(listOf(listOf(valueNt))) {
+                    convert(regexNode.value)
+                }
             }
 
             is RegexNode.SymbolNode -> {
@@ -138,38 +143,8 @@ object CfgConverter {
         return nonTerminals[node] ?: run {
             val newNt = "\$LA$laCounter"
             nonTerminals[node] = newNt
-            val reg = toRegexString(node)
-            lookaheadsMap[newNt] = reg
             laCounter++
-            cfg[newNt] = listOf(listOf())
             return newNt
-        }
-    }
-
-    private fun toRegexString(node: RegexNode): String {
-        return when (node) {
-            is RegexNode.ConcatNode -> {
-                toRegexString(node.left) + toRegexString(node.right)
-            }
-
-            is RegexNode.OrNode -> {
-                toRegexString(node.left) + "|" + toRegexString(node.right)
-            }
-
-            // для парсинга встроенными реджексами
-            is RegexNode.NonCatchGroupNode -> {
-                "(" + toRegexString(node.value) + ")"
-            }
-
-            is RegexNode.KleeneStarNode -> {
-                toRegexString(node.value) + "*"
-            }
-
-            is RegexNode.SymbolNode -> {
-                node.char.toString()
-            }
-
-            else -> throw Exception("Неожиданная нода в lookahead $node")
         }
     }
 
