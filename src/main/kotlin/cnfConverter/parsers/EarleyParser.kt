@@ -248,7 +248,8 @@ class EarleyParser(private val cfg: CFG) {
                             startSymbol = attr.nt,
                             terminals = cfg.terminals
                         ))
-                        val substring = mutableListOf<String>()
+                        // Сразу добавляю пустую строку для проверки условий
+                        val substring = mutableListOf("")
                         for (i in remainder.indices) {
                             substring.add(remainder.substring(startIndex = 0, endIndex = i + 1))
                         }
