@@ -17,6 +17,7 @@ object RegexParser {
     private var catchGroups: MutableMap<Int, RegexNode> = mutableMapOf()
     private var tokens: List<Token> = emptyList()
     private var inLookAhead: Boolean = false
+    private var links: MutableSet<RegexNode> = mutableSetOf()
 
     private var pos = -1
 
@@ -31,6 +32,7 @@ object RegexParser {
         pos = -1
         inLookAhead = false
         catchGroups.clear()
+        links.clear()
     }
 
     fun parse(tokens: List<Token>): RegexNode {
@@ -38,6 +40,10 @@ object RegexParser {
         val node = parseRg()
         if (peek() != null) {
             throw ParseException(next())
+        }
+        links.forEach { linkNode ->
+            (linkNode as RegexNode.LinkToCatchGroupNode).linkedNode =
+                catchGroups[linkNode.num] ?: throw Exception("Группы захвата ${linkNode.num} не существует")
         }
         return node
     }
@@ -85,10 +91,9 @@ object RegexParser {
             }
 
             is Token.LinkToCatchGroup -> {
-                // if (inLookAhead) throw Exception("Ссылка внутри опережающей проверки запрещена")
-                val node = catchGroups[token.number]
-                    ?: throw Exception("Группа захвата #${token.number} не инициализирована")
-                RegexNode.LinkToCatchGroupNode(node)
+                val linkNode = RegexNode.LinkToCatchGroupNode(RegexNode.DummyNode, token.number)
+                links.add(linkNode)
+                linkNode
             }
 
             is Token.LookAhead -> {

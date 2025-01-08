@@ -20,7 +20,8 @@ class BFSGenerator(
     fun generateWords(
         wordsNumber: Int,
         wordLength: Int? = null,
-        alwaysPositive: Boolean = false
+        alwaysPositive: Boolean = false,
+        condition: ((String) -> Boolean)? = null
     ): List<String> {
         val earleyParser = EarleyParser(cfg)
         val queue = ArrayDeque<QueueItem>()
@@ -35,7 +36,9 @@ class BFSGenerator(
 
             if (item.firstNtPos >= item.word.size) {
                 val word = item.word.joinToString(separator = "") { it.value }
-                if (earleyParser.parse(word) && (wordLength == null || item.word.size == wordLength)) {
+                if (earleyParser.parse(word) &&
+                    (wordLength == null || item.word.size == wordLength) &&
+                    (condition == null || condition(word))) {
                     generatedWords.add(word)
                 }
                 continue
@@ -71,7 +74,7 @@ class BFSGenerator(
                             } else symbol
                         }
                         val word = overflowWord.joinToString("") { it.value }
-                        if (earleyParser.parse(word)) generatedWords.add(word)
+                        if (earleyParser.parse(word) && (condition == null || condition(word))) generatedWords.add(word)
                     }
                     continue
                 }

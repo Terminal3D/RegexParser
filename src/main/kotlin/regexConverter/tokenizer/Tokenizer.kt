@@ -53,12 +53,10 @@ object Tokenizer {
                     when {
                         next2Symbol.isDigit() -> {
                             val groupNum = next2Symbol.digitToInt()
-                            if (groupNum > catchGroupCount) {
-                                throw Exception("Группа $groupNum не была проинициализирована на момент использования на позиции: $pos")
-                            } else if (groupNum == 0) {
+                            if (groupNum == 0) {
                                 throw Exception("Используется недопустимый номер (0) при ссылке на выражение на позиции: $pos   ")
                             }
-                            tokens.add(
+                                tokens.add(
                                 Token.LinkToCatchGroup(
                                     pos,
                                     next2Symbol.digitToInt()

@@ -16,7 +16,7 @@ sealed class RegexNode {
     class OrNode(val left: RegexNode, val right: RegexNode) : RegexNode()
     class NonCatchGroupNode(val value: RegexNode) : RegexNode()
     class KleeneStarNode(val value: RegexNode) : RegexNode()
-    class LinkToCatchGroupNode(val linkedNode: RegexNode) : RegexNode()
+    class LinkToCatchGroupNode(var linkedNode: RegexNode, val num: Int) : RegexNode()
     class NewCatchGroupNode(var value: RegexNode = DummyNode) : RegexNode()
     class LookAheadNode(val value: RegexNode) : RegexNode()
     class SymbolNode(val char: Char) : RegexNode()

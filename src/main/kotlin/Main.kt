@@ -3,11 +3,14 @@ package org.example
 import cnfConverter.parsers.EarleyParser
 import org.example.cnfConverter.generator.BFSGenerator
 import org.example.cnfConverter.models.CfgMapper
+import org.example.cnfConverter.parsers.GrammarParser
 import org.example.regexConverter.cfgConverter.CfgConverter
 import org.example.regexConverter.parser.RegexParser
 import org.example.regexConverter.tokenizer.Tokenizer
+import java.io.File
 
 fun main() {
+
     while (true) {
         val inputRegex = readln()
         try {
