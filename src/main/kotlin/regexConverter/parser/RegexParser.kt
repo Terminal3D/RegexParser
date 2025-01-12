@@ -102,7 +102,7 @@ object RegexParser {
                 val inside = parseRg()
                 assertRightBracket(inside)
                 inLookAhead = false
-                RegexNode.LookAheadNode(inside)
+                RegexNode.LookAheadNode(value = RegexNode.NonCatchGroupNode(inside))
             }
 
             is Token.NewCatchGroup -> {

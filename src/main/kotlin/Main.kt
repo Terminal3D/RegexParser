@@ -10,7 +10,7 @@ import org.example.regexConverter.tokenizer.Tokenizer
 import java.io.File
 
 fun main() {
-
+    // grammar()
     while (true) {
         val inputRegex = readln()
         try {
@@ -19,7 +19,7 @@ fun main() {
             val cfg = CfgConverter.convertToCFG(parsed)
             val cfgForParser = CfgMapper.map(cfg.first, cfg.second)
             println(cfgForParser)
-            BFSGenerator(cfgForParser).generateWords(10).forEach { println(it) }
+            BFSGenerator(cfgForParser).generateWords(10)
             println("Чтобы выйти из проверки слов введите exit")
             var cmd = readln().trim()
             val earleyParser = EarleyParser(cfgForParser)
@@ -32,4 +32,24 @@ fun main() {
             continue
         }
     }
+}
+
+fun grammar() {
+    val cfg = """
+    S -> CG1 CG3 
+    A -> a 
+    B -> b 
+    CG2 -> CC1 
+    UN1 -> A 
+    UN1 -> CG2 
+    CG1 -> UN1 
+    RE1 -> UN2 
+    CG3 -> UN2 
+    CC1 -> B B 
+    UN2 -> A 
+    UN2 -> RE1 
+    """.trimIndent()
+    val parsedCfg = GrammarParser().parse(cfg)
+    println(parsedCfg)
+    BFSGenerator(parsedCfg).generateWords(10)
 }

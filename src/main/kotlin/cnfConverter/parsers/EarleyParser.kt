@@ -242,13 +242,12 @@ class EarleyParser(private val cfg: CFG) {
                     is Attribute.Lookahead -> {
                         val remainder = word.substring(currentPos)
                         val newGrammar = cfg.grammar.toMutableMap()
-                        newGrammar[attr.nt] = attr.looka
                         val matchResult = EarleyParser(CFG(
                             newGrammar,
-                            startSymbol = attr.nt,
+                            startSymbol = attr.looka[0].first[0].value,
                             terminals = cfg.terminals
                         ))
-                        // Сразу добавляю пустую строку для проверки условий
+                        // Сразу добавляю пустую строку для пустого лукахеда
                         val substring = mutableListOf("")
                         for (i in remainder.indices) {
                             substring.add(remainder.substring(startIndex = 0, endIndex = i + 1))

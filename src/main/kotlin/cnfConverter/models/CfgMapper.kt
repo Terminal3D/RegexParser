@@ -24,7 +24,6 @@ object CfgMapper {
                                                 type = TokenType.TERMINAL,
                                                 value = el
                                             ).also { terminals.add(el[0]) }
-
                                             el == "ε" -> Symbol(type = TokenType.EPSILON, value = "ε")
                                             else -> Symbol(type = TokenType.NON_TERMINAL, value = el)
                                         }

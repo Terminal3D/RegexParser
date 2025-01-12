@@ -59,8 +59,7 @@ class GrammarParser {
 
         while (index < length) {
             when {
-
-                rhs[index].isWhitespace() -> {
+                rhs[index].isWhitespace() || rhs[index] == 'ε' -> {
                     index++
                 }
 
@@ -99,10 +98,10 @@ class GrammarParser {
     }
 
     private fun parseNT(part: String): Symbol {
-        val ntRegex = Regex(NT_REGEX)
-        if (!ntRegex.matches(part)) {
-            throw IllegalArgumentException("Неверный нетерминал: '$part'")
-        }
+        // val ntRegex = Regex(NT_REGEX)
+        // if (!ntRegex.matches(part)) {
+        //     throw IllegalArgumentException("Неверный нетерминал: '$part'")
+        // }
         return Symbol(TokenType.NON_TERMINAL, part)
     }
 

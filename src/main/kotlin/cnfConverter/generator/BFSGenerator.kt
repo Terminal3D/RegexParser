@@ -6,6 +6,9 @@ import org.example.cnfConverter.models.Symbol
 import org.example.cnfConverter.models.TokenType
 import java.util.LinkedList
 
+private const val ITERATION_LIMIT = 10000000
+private const val FAIL_ITERATION_THRESHOLD = 100000
+
 class BFSGenerator(
     private val cfg: CFG,
 ) {
@@ -20,7 +23,7 @@ class BFSGenerator(
     fun generateWords(
         wordsNumber: Int,
         wordLength: Int? = null,
-        alwaysPositive: Boolean = false,
+        alwaysPositive: Boolean = true,
         condition: ((String) -> Boolean)? = null
     ): List<String> {
         val earleyParser = EarleyParser(cfg)
@@ -30,16 +33,27 @@ class BFSGenerator(
             add(Symbol(TokenType.NON_TERMINAL, cfg.startSymbol))
         }
         queue.add(QueueItem(word = startWord, firstNtPos = 0))
+        var failCounter = 0
 
         while (generatedWords.size < wordsNumber && queue.isNotEmpty()) {
             val item = queue.removeFirst()
-
+            failCounter++
+            if (failCounter % FAIL_ITERATION_THRESHOLD == 0) {
+                println("Не было найдено ни одного нового слова спустя $failCounter итераций.")
+                if (failCounter == ITERATION_LIMIT) {
+                    println("Лимит неудачных итераций достигнут")
+                    break
+                }
+            }
             if (item.firstNtPos >= item.word.size) {
                 val word = item.word.joinToString(separator = "") { it.value }
                 if (earleyParser.parse(word) &&
                     (wordLength == null || item.word.size == wordLength) &&
                     (condition == null || condition(word))) {
-                    generatedWords.add(word)
+                    if (!generatedWords.contains(word)) {
+                        println(word)
+                        generatedWords.add(word)
+                    }
                 }
                 continue
             }
@@ -74,7 +88,12 @@ class BFSGenerator(
                             } else symbol
                         }
                         val word = overflowWord.joinToString("") { it.value }
-                        if (earleyParser.parse(word) && (condition == null || condition(word))) generatedWords.add(word)
+                        if (condition == null || condition(word)) {
+                            if (!generatedWords.contains(word)) {
+                                println(word)
+                                generatedWords.add(word)
+                            }
+                        }
                     }
                     continue
                 }
