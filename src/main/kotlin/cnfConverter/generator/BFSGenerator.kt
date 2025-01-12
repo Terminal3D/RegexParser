@@ -47,7 +47,7 @@ class BFSGenerator(
             }
             if (item.firstNtPos >= item.word.size) {
                 val word = item.word.joinToString(separator = "") { it.value }
-                if (earleyParser.parse(word) &&
+                if (earleyParser.parse(word, checkAttr = true, clearCache = false) &&
                     (wordLength == null || item.word.size == wordLength) &&
                     (condition == null || condition(word))) {
                     if (!generatedWords.contains(word)) {

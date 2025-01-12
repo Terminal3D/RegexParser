@@ -65,13 +65,24 @@ data class EarleyItem(
     }
 }
 
+private val cachedLookaheadChecks: MutableMap<Int, MutableMap<String, Boolean>> = mutableMapOf()
+
+fun clearCache() {
+    cachedLookaheadChecks.clear()
+}
+
 class EarleyParser(private val cfg: CFG) {
 
     private lateinit var earleySets: Array<MutableSet<EarleyItem>>
 
-    fun parse(input: String, checkAttr: Boolean = true): Boolean = parseAllTrees(input, checkAttr).isNotEmpty()
+    fun parse(input: String, checkAttr: Boolean = true, clearCache: Boolean = true): Boolean =
+        parseAllTrees(input, checkAttr, clearCache).isNotEmpty()
 
-    fun parseAllTrees(input: String, checkAttr: Boolean = true): List<ParseTree> {
+    fun parseAllTrees(input: String, checkAttr: Boolean = true, clearCache: Boolean = true): List<ParseTree> {
+        if (clearCache) {
+            clearCache()
+        }
+
         val tokens: List<Symbol> = input.map { ch ->
             Symbol(type = TokenType.TERMINAL, value = ch.toString())
         }
@@ -242,18 +253,27 @@ class EarleyParser(private val cfg: CFG) {
                     is Attribute.Lookahead -> {
                         val remainder = word.substring(currentPos)
                         val newGrammar = cfg.grammar.toMutableMap()
-                        val matchResult = EarleyParser(CFG(
-                            newGrammar,
-                            startSymbol = attr.looka[0].first[0].value,
-                            terminals = cfg.terminals
-                        ))
+                        val matchResult = EarleyParser(
+                            CFG(
+                                newGrammar,
+                                startSymbol = attr.looka[0].first[0].value,
+                                terminals = cfg.terminals
+                            )
+                        )
                         // Сразу добавляю пустую строку для пустого лукахеда
                         val substring = mutableListOf("")
                         for (i in remainder.indices) {
                             substring.add(remainder.substring(startIndex = 0, endIndex = i + 1))
                         }
                         val ok = substring.any {
-                            matchResult.parse(it, true)
+                            val t = cachedLookaheadChecks
+                            if (cachedLookaheadChecks[attr.number] == null) {
+                                cachedLookaheadChecks[attr.number] = mutableMapOf()
+                            }
+                            cachedLookaheadChecks[attr.number]!!.getOrPut(it, {
+                                println(it)
+                                matchResult.parse(it, checkAttr = true, clearCache = false)
+                            })
                         }
                         if (!ok) return Pair(false, currentPos)
                     }

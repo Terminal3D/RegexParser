@@ -1,6 +1,7 @@
 package org.example
 
 import cnfConverter.parsers.EarleyParser
+import cnfConverter.parsers.clearCache
 import org.example.cnfConverter.generator.BFSGenerator
 import org.example.cnfConverter.models.CfgMapper
 import org.example.cnfConverter.parsers.GrammarParser
@@ -24,9 +25,10 @@ fun main() {
             var cmd = readln().trim()
             val earleyParser = EarleyParser(cfgForParser)
             while (cmd != "exit") {
-                println(earleyParser.parseAllTrees(cmd))
+                println(earleyParser.parseAllTrees(cmd, checkAttr = true, clearCache = false))
                 cmd = readln().trim()
             }
+            clearCache()
         } catch (e: Exception) {
             println(e.message)
             continue
