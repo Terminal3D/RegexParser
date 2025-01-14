@@ -20,7 +20,7 @@ fun main() {
             val cfg = CfgConverter.convertToCFG(parsed)
             val cfgForParser = CfgMapper.map(cfg.first, cfg.second)
             println(cfgForParser)
-            BFSGenerator(cfgForParser).generateWords(10)
+            // BFSGenerator(cfgForParser).generateWords(10)
             println("Чтобы выйти из проверки слов введите exit")
             var cmd = readln().trim()
             val earleyParser = EarleyParser(cfgForParser)

@@ -1,5 +1,6 @@
 package cnfConverter.parsers
 
+import org.example.cnfConverter.models.Argument
 import org.example.cnfConverter.models.Attribute
 import org.example.cnfConverter.models.CFG
 import org.example.cnfConverter.models.Symbol
@@ -65,7 +66,7 @@ data class EarleyItem(
     }
 }
 
-private val cachedLookaheadChecks: MutableMap<Int, MutableMap<String, Boolean>> = mutableMapOf()
+private val cachedLookaheadChecks: MutableMap<String, MutableMap<String, Boolean>> = mutableMapOf()
 
 fun clearCache() {
     cachedLookaheadChecks.clear()
@@ -104,7 +105,7 @@ class EarleyParser(private val cfg: CFG) {
             earleySets[0].add(item)
         }
 
-        closure(0, tokens)
+        closure(0)
 
         for (i in 0 until n) {
             val currentSetSnapshot = earleySets[i].toList()
@@ -133,7 +134,7 @@ class EarleyParser(private val cfg: CFG) {
                     }
                 }
             }
-            closure(i + 1, tokens)
+            closure(i + 1)
         }
 
         val results = mutableListOf<ParseTree>()
@@ -158,7 +159,7 @@ class EarleyParser(private val cfg: CFG) {
         } else results
     }
 
-    private fun closure(i: Int, tokens: List<Symbol>) {
+    private fun closure(i: Int) {
         val queue = ArrayDeque(earleySets[i])
         val visited = earleySets[i].toMutableSet()
 
@@ -250,32 +251,34 @@ class EarleyParser(private val cfg: CFG) {
 
             for (attr in attrs) {
                 when (attr) {
-                    is Attribute.Lookahead -> {
-                        val remainder = word.substring(currentPos)
-                        val newGrammar = cfg.grammar.toMutableMap()
-                        val matchResult = EarleyParser(
-                            CFG(
-                                newGrammar,
-                                startSymbol = attr.looka[0].first[0].value,
-                                terminals = cfg.terminals
+                    is Attribute.CheckEqual -> {
+                        if (attr.leftArg is Argument.LookAhead) {
+                            val lookAheadNt = attr.leftArg.looka.value
+                            val remainder = word.substring(currentPos)
+                            val newGrammar = cfg.grammar.toMutableMap()
+                            val matchResult = EarleyParser(
+                                CFG(
+                                    newGrammar,
+                                    startSymbol = lookAheadNt,
+                                    terminals = cfg.terminals
+                                )
                             )
-                        )
-                        // Сразу добавляю пустую строку для пустого лукахеда
-                        val substring = mutableListOf("")
-                        for (i in remainder.indices) {
-                            substring.add(remainder.substring(startIndex = 0, endIndex = i + 1))
-                        }
-                        val ok = substring.any {
-                            val t = cachedLookaheadChecks
-                            if (cachedLookaheadChecks[attr.number] == null) {
-                                cachedLookaheadChecks[attr.number] = mutableMapOf()
+                            // Сразу добавляю пустую строку для пустого лукахеда
+                            val substring = mutableListOf("")
+                            for (i in remainder.indices) {
+                                substring.add(remainder.substring(startIndex = 0, endIndex = i + 1))
                             }
-                            cachedLookaheadChecks[attr.number]!!.getOrPut(it, {
-                                println(it)
-                                matchResult.parse(it, checkAttr = true, clearCache = false)
-                            })
+                            val ok = substring.any {
+                                val t = cachedLookaheadChecks
+                                if (cachedLookaheadChecks[lookAheadNt] == null) {
+                                    cachedLookaheadChecks[lookAheadNt] = mutableMapOf()
+                                }
+                                cachedLookaheadChecks[lookAheadNt]!!.getOrPut(it, {
+                                    matchResult.parse(it, checkAttr = true, clearCache = false)
+                                })
+                            }
+                            if (!ok) return Pair(false, currentPos)
                         }
-                        if (!ok) return Pair(false, currentPos)
                     }
 
                     else -> {}
@@ -298,4 +301,5 @@ class EarleyParser(private val cfg: CFG) {
             return Pair(true, currentPos)
         }
     }
+
 }

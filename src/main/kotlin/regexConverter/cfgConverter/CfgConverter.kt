@@ -8,7 +8,7 @@ object CfgConverter {
     private val ntCountMap: MutableMap<Char, Int> = mutableMapOf()
     private val cfg: MutableMap<String, List<List<String>>> = mutableMapOf()
     private val nonTerminalLetters = (('A'..'Z') - 'S').toSet()
-    private val lookaheadsMap = mutableMapOf<String, List<List<String>>>()
+    private val lookaheadsMap = mutableMapOf<String, String>()
     private var laCounter = 0
     private fun init() {
         nonTerminals.clear()
@@ -18,7 +18,7 @@ object CfgConverter {
         laCounter = 0
     }
 
-    fun convertToCFG(regex: RegexNode): Pair<Map<String, List<List<String>>>, Map<String, List<List<String>>>> {
+    fun convertToCFG(regex: RegexNode): Pair<Map<String, List<List<String>>>, Map<String, String>> {
         init()
         nonTerminals[regex] = "S"
         convert(regex)
@@ -99,7 +99,7 @@ object CfgConverter {
                 val laNt = getLANt(regexNode.value)
                 Pair(listOf(listOf(laNt))) {
                     val laNode = convert(regexNode.value)
-                    lookaheadsMap[laNt] = laNode
+                    lookaheadsMap[laNt] = laNode[0][0]
                     cfg[laNt] = listOf(emptyList())
                 }
             }
