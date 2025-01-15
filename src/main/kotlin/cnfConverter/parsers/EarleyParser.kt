@@ -6,7 +6,6 @@ import org.example.cnfConverter.models.Attribute
 import org.example.cnfConverter.models.CFG
 import org.example.cnfConverter.models.Symbol
 import org.example.cnfConverter.models.TokenType
-import org.w3c.dom.Attr
 
 data class ParseTree(
     val symbol: String,
@@ -311,10 +310,25 @@ class EarleyParser(private val cfg: CFG) {
                         return Triple(false, currentPos, mutableMapOf())
                     }
                 }
-                is Attribute.CheckSmaller -> {
+                is Attribute.CheckLesser -> {
                     val leftVal = evaluateArgument(attr.left, word, currentPos, attributeContext)
                     val rightVal = evaluateArgument(attr.right, word, currentPos, attributeContext)
-                    if (!Attribute.CheckSmaller.evaluate(leftVal, rightVal)) {
+                    if (!Attribute.CheckLesser.evaluate(leftVal, rightVal)) {
+                        return Triple(false, currentPos, mutableMapOf())
+                    }
+                }
+
+                is Attribute.CheckGreaterOrEqual -> {
+                    val leftVal = evaluateArgument(attr.left, word, currentPos, attributeContext)
+                    val rightVal = evaluateArgument(attr.right, word, currentPos, attributeContext)
+                    if (!Attribute.CheckGreaterOrEqual.evaluate(leftVal, rightVal)) {
+                        return Triple(false, currentPos, mutableMapOf())
+                    }
+                }
+                is Attribute.CheckLesserOrEqual -> {
+                    val leftVal = evaluateArgument(attr.left, word, currentPos, attributeContext)
+                    val rightVal = evaluateArgument(attr.right, word, currentPos, attributeContext)
+                    if (!Attribute.CheckLesserOrEqual.evaluate(leftVal, rightVal)) {
                         return Triple(false, currentPos, mutableMapOf())
                     }
                 }

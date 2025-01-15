@@ -23,6 +23,7 @@ data class CFG(
 
 class EvaluateError(message: String) : Exception(message)
 
+
 sealed interface ArgumentValue {
     data class IntValue(val value: Int) : ArgumentValue {
         override fun toString() = value.toString()
@@ -218,6 +219,7 @@ sealed class Argument {
     }
 }
 
+
 sealed class Attribute {
 
     data class Assignment(
@@ -225,6 +227,7 @@ sealed class Attribute {
         val value: Argument
     ) : Attribute() {
         override fun toString(): String = super.toString()
+
     }
 
     data class CheckEqual(
@@ -322,7 +325,7 @@ sealed class Attribute {
         }
     }
 
-    data class CheckSmaller(
+    data class CheckLesser(
         val left: Argument,
         val right: Argument,
     ) : Attribute() {
@@ -354,13 +357,79 @@ sealed class Attribute {
         }
     }
 
+    data class CheckGreaterOrEqual(
+        val left: Argument,
+        val right: Argument,
+    ) : Attribute() {
+        override fun toString(): String = super.toString()
+        companion object {
+
+            private fun compareValues(leftVal: ArgumentValue, rightVal: ArgumentValue): Boolean {
+                return when {
+                    leftVal is ArgumentValue.IntValue && rightVal is ArgumentValue.IntValue ->
+                        leftVal.value >= rightVal.value
+
+                    leftVal is ArgumentValue.BooleanValue && rightVal is ArgumentValue.BooleanValue ->
+                        leftVal.value >= rightVal.value
+
+                    leftVal is ArgumentValue.StringValue && rightVal is ArgumentValue.StringValue ->
+                        leftVal.value >= rightVal.value
+
+                    else -> throw EvaluateError(
+                        "Невозможно сравнить следующие два типа данных: " +
+                            "${leftVal::class.simpleName} и ${rightVal::class.simpleName}"
+                    )
+                }
+            }
+
+            fun evaluate(leftVal: ArgumentValue, rightVal: ArgumentValue): Boolean {
+                val result = compareValues(leftVal, rightVal)
+                return result
+            }
+        }
+    }
+
+    data class CheckLesserOrEqual(
+        val left: Argument,
+        val right: Argument,
+    ) : Attribute() {
+        override fun toString(): String = super.toString()
+        companion object {
+
+            private fun compareValues(leftVal: ArgumentValue, rightVal: ArgumentValue): Boolean {
+                return when {
+                    leftVal is ArgumentValue.IntValue && rightVal is ArgumentValue.IntValue ->
+                        leftVal.value <= rightVal.value
+
+                    leftVal is ArgumentValue.BooleanValue && rightVal is ArgumentValue.BooleanValue ->
+                        leftVal.value <= rightVal.value
+
+                    leftVal is ArgumentValue.StringValue && rightVal is ArgumentValue.StringValue ->
+                        leftVal.value <= rightVal.value
+
+                    else -> throw EvaluateError(
+                        "Невозможно сравнить следующие два типа данных: " +
+                            "${leftVal::class.simpleName} и ${rightVal::class.simpleName}"
+                    )
+                }
+            }
+
+            fun evaluate(leftVal: ArgumentValue, rightVal: ArgumentValue): Boolean {
+                val result = compareValues(leftVal, rightVal)
+                return result
+            }
+        }
+    }
+
     override fun toString(): String {
         return when (this) {
             is Assignment -> "$argument := $value"
             is CheckEqual -> "$leftArg == $rightArg"
             is CheckNonEqual -> "$leftArg != $rightArg"
             is CheckGreater -> "$left > $right"
-            is CheckSmaller -> "$left < $right"
+            is CheckLesser -> "$left < $right"
+            is CheckGreaterOrEqual -> "$left >= $right"
+            is CheckLesserOrEqual -> "$left <= $right"
         }
     }
 }

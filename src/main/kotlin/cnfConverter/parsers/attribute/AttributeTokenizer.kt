@@ -24,7 +24,11 @@ sealed class AttributeToken {
 
     data class GreaterToken(override val pos: Int) : AttributeToken()
 
-    data class SmallerToken(override val pos: Int) : AttributeToken()
+    data class LesserToken(override val pos: Int) : AttributeToken()
+
+    data class GreaterOrEqualToken(override val pos: Int) : AttributeToken()
+
+    data class LesserOrEqualToken(override val pos: Int) : AttributeToken()
 
     data class IntToken(
         override val pos: Int,
@@ -154,22 +158,22 @@ object AttributeTokenizer {
                     }
 
                     input.startsWith("===", pos) -> {
-                        tokens.add(AttributeToken.AssertEqual(pos))
+                        tokens.add(AttributeToken.EqualToken(pos))
                         pos += 3
                     }
 
                     input.startsWith("!==", pos) -> {
-                        tokens.add(AttributeToken.AssertNonEqual(pos))
+                        tokens.add(AttributeToken.NotEqualToken(pos))
                         pos += 3
                     }
 
                     input.startsWith("==", pos) -> {
-                        tokens.add(AttributeToken.EqualToken(pos))
+                        tokens.add(AttributeToken.AssertEqual(pos))
                         pos += 2
                     }
 
                     input.startsWith("!=", pos) -> {
-                        tokens.add(AttributeToken.NotEqualToken(pos))
+                        tokens.add(AttributeToken.AssertNonEqual(pos))
                         pos += 2
                     }
 
@@ -208,13 +212,24 @@ object AttributeTokenizer {
                         pos += 5
                     }
 
+                    input.startsWith(">=", pos) -> {
+                        tokens.add(AttributeToken.GreaterOrEqualToken(pos))
+                        pos += 2
+                    }
+
+                    input.startsWith("<=", pos) -> {
+                        tokens.add(AttributeToken.LesserOrEqualToken(pos))
+                        pos += 2
+                    }
+
+
                     input.startsWith(">", pos) -> {
                         tokens.add(AttributeToken.GreaterToken(pos))
                         pos += 1
                     }
 
                     input.startsWith("<", pos) -> {
-                        tokens.add(AttributeToken.SmallerToken(pos))
+                        tokens.add(AttributeToken.LesserToken(pos))
                         pos += 1
                     }
 

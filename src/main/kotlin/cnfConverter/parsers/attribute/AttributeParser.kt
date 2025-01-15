@@ -11,7 +11,7 @@ import org.example.cnfConverter.models.TokenType
 Грамматика для атрибутной части
 AttrList ::= Attr ( , Attr ) *
 Attr ::= Arg := Arg | Arg == Arg | Arg != Arg | Arg > Arg | Arg < Arg
-Arg ::= ArgBase | Arg == Arg | Arg != Arg | Arg && Arg | Arg || Arg | Arg + Arg
+Arg ::= ArgBase | Arg === Arg | Arg !== Arg | Arg && Arg | Arg || Arg | Arg + Arg
 ArgBase ::= NT | Lookahead | [num] | true | false | [string] | ( Arg )
 Lookahead ::= lookahead (∈ | ∉) L( NTBase )
 NT ::= NTBase . [num] . AttrName
@@ -72,8 +72,22 @@ object AttributeParser {
                     right = rightArg
                 )
             }
-            is AttributeToken.SmallerToken -> {
-                Attribute.CheckSmaller(
+            is AttributeToken.LesserToken -> {
+                Attribute.CheckLesser(
+                    left = leftArg,
+                    right = rightArg
+                )
+            }
+
+            is AttributeToken.GreaterOrEqualToken -> {
+                Attribute.CheckGreaterOrEqual(
+                    left = leftArg,
+                    right = rightArg
+                )
+            }
+
+            is AttributeToken.LesserOrEqualToken -> {
+                Attribute.CheckLesserOrEqual(
                     left = leftArg,
                     right = rightArg
                 )

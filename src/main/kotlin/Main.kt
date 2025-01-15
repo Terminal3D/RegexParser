@@ -8,12 +8,11 @@ import org.example.cnfConverter.parsers.GrammarParser
 import org.example.regexConverter.cfgConverter.CfgConverter
 import org.example.regexConverter.parser.RegexParser
 import org.example.regexConverter.tokenizer.Tokenizer
-import java.io.File
 
 fun main() {
     while (true) {
         try {
-            println("Выберите режим\n1. КС-грамматика\n2. Регулярные выражения")
+            println("Выберите режим\n1. Атрибутная грамматика\n2. Регулярные выражения")
             val mode = readln().trim().toInt()
             if (mode == 1) {
                 grammar()
@@ -33,24 +32,35 @@ fun grammar() {
     S -> a ; S.0.a := 1, S.0.b := 0
     S -> b ; S.0.b := 1, S.0.a := 0
     """.trimIndent()
-    while (true) {
-        try {
-            val parsedCfg = GrammarParser().parse(cfg)
-            println(parsedCfg)
-            BFSGenerator(parsedCfg).generateWords(10)
-            println("Чтобы выйти из проверки слов введите exit")
-            var cmd = readln().trim()
-            val earleyParser = EarleyParser(parsedCfg)
-            while (cmd != "exit") {
-                println(earleyParser.parseAllTrees(cmd, checkAttr = true, clearCache = false))
-                cmd = readln().trim()
-            }
-            clearCache()
-        } catch (e: Exception) {
-            println(e.message)
-            break
-        }
+
+    val cfg2 = """
+        S -> a S b S ; S.1.val > S.2.val, S.0.val := true
+        S -> c ; S.0.val := false
+        S -> d ; S.0.val := true
+    """.trimIndent()
+
+    val cfg3 = """
+        S -> b S b S ; S.1.a1 == S.1.a2 + S.2.a1, S.0.a1 := S.1.a1 + S.2.a1, S.0.a2 := S.1.a1
+        S -> a ; S.0.a1 := 1, S.0.a2 := 0
+    """.trimIndent()
+
+    val cfg4 = """
+        S -> S m S ; S.1.attr >= S.2.attr, S.0.attr := S.1.attr + S.2.attr
+        S -> A ; S.0.attr := A.1.attr
+        A -> a A ; A.0.attr := A.1.attr + 1
+        A -> a ; A.0.attr := 1
+    """.trimIndent()
+    val parsedCfg = GrammarParser().parse(cfg4)
+    println(parsedCfg)
+    BFSGenerator(parsedCfg).generateWords(10)
+    println("Чтобы выйти из проверки слов введите exit")
+    var cmd = readln().trim()
+    val earleyParser = EarleyParser(parsedCfg)
+    while (cmd != "exit") {
+        println(earleyParser.parseAllTrees(cmd, checkAttr = true, clearCache = false))
+        cmd = readln().trim()
     }
+    clearCache()
 }
 
 fun regex() {
