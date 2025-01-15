@@ -4,7 +4,7 @@ object CfgMapper {
 
     private const val T_REGEX = "^[a-z]\$"
 
-    fun map(cfg: Map<String, List<List<String>>>, lookaheadMap: Map<String, String>): CFG {
+    fun map(cfg: Map<String, List<List<String>>>, lookaheadMap: Map<String, Pair<Boolean, String>>): CFG {
         val newCsg: MutableMap<String, List<Pair<List<Symbol>, List<Attribute>>>> = mutableMapOf()
         val terminals = mutableSetOf<Char>()
         cfg.forEach { (key, value) ->
@@ -13,12 +13,21 @@ object CfgMapper {
                 val attributes = lookaheadMap[key]?.let { la ->
                     listOf(
                         Attribute.CheckEqual(
-                            leftArg = Argument.LookAhead.PositiveLookahead(
-                                looka = Symbol(
-                                    value = la,
-                                    type = TokenType.NON_TERMINAL
+                            leftArg = if (la.first) {
+                                Argument.LookAhead.PositiveLookahead(
+                                    looka = Symbol(
+                                        value = la.second,
+                                        type = TokenType.NON_TERMINAL
+                                    )
                                 )
-                            ),
+                            } else {
+                                Argument.LookAhead.NegativeLookahead(
+                                    looka = Symbol(
+                                        value = la.second,
+                                        type = TokenType.NON_TERMINAL
+                                    )
+                                )
+                            },
                             rightArg = Argument.TrueArg
                         )
                     )

@@ -80,7 +80,7 @@ class TokenizerTest {
         val tokens = Tokenizer.tokenize(regex)
 
         assertEquals(3, tokens.size)
-        assertEquals(Token.LookAhead(2), tokens[0])
+        assertEquals(Token.PositiveLookAhead(2), tokens[0])
         assertEquals(Token.Symbol(3, 'a'), tokens[1])
         assertEquals(Token.RightBracket(4), tokens[2])
     }
@@ -132,7 +132,7 @@ class TokenizerTest {
         assertEquals(Token.RightBracket(7), tokens[5])
         assertEquals(Token.KleeneStar(8), tokens[6])
         assert(tokens[7] is Token.NewCatchGroup)
-        assertEquals(Token.LookAhead(14), tokens[10])
+        assertEquals(Token.PositiveLookAhead(14), tokens[10])
     }
 
     @Test

@@ -11,7 +11,49 @@ import org.example.regexConverter.tokenizer.Tokenizer
 import java.io.File
 
 fun main() {
-    // grammar()
+    while (true) {
+        try {
+            println("Выберите режим\n1. КС-грамматика\n2. Регулярные выражения")
+            val mode = readln().trim().toInt()
+            if (mode == 1) {
+                grammar()
+            } else if (mode == 2) {
+                regex()
+            }
+        } catch (_: Exception) {
+
+        }
+    }
+
+}
+
+fun grammar() {
+    val cfg = """
+    S -> S S ; S.1.a + S.2.a < S.1.b + S.2.b, S.0.a := S.1.a + S.2.a, S.0.b := S.1.b + S.2.b 
+    S -> a ; S.0.a := 1, S.0.b := 0
+    S -> b ; S.0.b := 1, S.0.a := 0
+    """.trimIndent()
+    while (true) {
+        try {
+            val parsedCfg = GrammarParser().parse(cfg)
+            println(parsedCfg)
+            BFSGenerator(parsedCfg).generateWords(10)
+            println("Чтобы выйти из проверки слов введите exit")
+            var cmd = readln().trim()
+            val earleyParser = EarleyParser(parsedCfg)
+            while (cmd != "exit") {
+                println(earleyParser.parseAllTrees(cmd, checkAttr = true, clearCache = false))
+                cmd = readln().trim()
+            }
+            clearCache()
+        } catch (e: Exception) {
+            println(e.message)
+            break
+        }
+    }
+}
+
+fun regex() {
     while (true) {
         val inputRegex = readln()
         try {
@@ -20,7 +62,7 @@ fun main() {
             val cfg = CfgConverter.convertToCFG(parsed)
             val cfgForParser = CfgMapper.map(cfg.first, cfg.second)
             println(cfgForParser)
-            // BFSGenerator(cfgForParser).generateWords(10)
+            BFSGenerator(cfgForParser).generateWords(10)
             println("Чтобы выйти из проверки слов введите exit")
             var cmd = readln().trim()
             val earleyParser = EarleyParser(cfgForParser)
@@ -34,24 +76,4 @@ fun main() {
             continue
         }
     }
-}
-
-fun grammar() {
-    val cfg = """
-    S -> CG1 CG3 
-    A -> a 
-    B -> b 
-    CG2 -> CC1 
-    UN1 -> A 
-    UN1 -> CG2 
-    CG1 -> UN1 
-    RE1 -> UN2 
-    CG3 -> UN2 
-    CC1 -> B B 
-    UN2 -> A 
-    UN2 -> RE1 
-    """.trimIndent()
-    val parsedCfg = GrammarParser().parse(cfg)
-    println(parsedCfg)
-    BFSGenerator(parsedCfg).generateWords(10)
 }

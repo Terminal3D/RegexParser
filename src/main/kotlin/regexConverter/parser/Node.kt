@@ -18,7 +18,8 @@ sealed class RegexNode {
     class KleeneStarNode(val value: RegexNode) : RegexNode()
     class LinkToCatchGroupNode(var linkedNode: RegexNode, val num: Int) : RegexNode()
     class NewCatchGroupNode(var value: RegexNode = DummyNode) : RegexNode()
-    class LookAheadNode(val value: RegexNode) : RegexNode()
+    class PositiveLookAheadNode(val value: RegexNode) : RegexNode()
+    class NegativeLookAheadNode(val value: RegexNode) : RegexNode()
     class SymbolNode(val char: Char) : RegexNode()
 
     object DummyNode : RegexNode()
@@ -29,11 +30,12 @@ sealed class RegexNode {
             DummyNode -> "dummy"
             is KleeneStarNode -> "*"
             is LinkToCatchGroupNode -> "link"
-            is LookAheadNode -> "lookahead"
+            is PositiveLookAheadNode -> "positive lookahead"
             is NewCatchGroupNode -> "new catch group"
             is NonCatchGroupNode -> "non catch group"
             is OrNode -> "|"
             is SymbolNode -> "[a-z]"
+            is NegativeLookAheadNode -> "negative lookahead"
         }
     }
 }

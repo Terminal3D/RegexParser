@@ -41,7 +41,7 @@ sealed class Argument {
     data class NonTerminalArg(
         val nt: String,
         val ntNum: Int,
-        val atrName: String
+        val attrName: String
     ) : Argument() {
         override fun toString(): String = super.toString()
     }
@@ -52,6 +52,7 @@ sealed class Argument {
         data class PositiveLookahead(override val looka: Symbol) : LookAhead() {
             override fun toString() = super.toString()
         }
+
         data class NegativeLookahead(override val looka: Symbol) : LookAhead() {
             override fun toString() = super.toString()
         }
@@ -95,6 +96,10 @@ sealed class Argument {
                 )
             }
         }
+    }
+
+    data class BracketsArg(val value: Argument) : Argument() {
+        override fun toString(): String = super.toString()
     }
 
     data class IntNumArg(val value: ArgumentValue.IntValue) : Argument() {
@@ -165,36 +170,40 @@ sealed class Argument {
 
     data class Plus(val left: Argument, val right: Argument) : Argument() {
         override fun toString(): String = super.toString()
-        fun evaluate(leftVal: ArgumentValue, rightVal: ArgumentValue): ArgumentValue {
-            return when {
-                leftVal is ArgumentValue.IntValue && rightVal is ArgumentValue.IntValue -> {
-                    ArgumentValue.IntValue(leftVal.value + rightVal.value)
-                }
 
-                leftVal is ArgumentValue.BooleanValue && rightVal is ArgumentValue.BooleanValue -> {
-                    ArgumentValue.BooleanValue(leftVal.value.xor(rightVal.value))
-                }
+        companion object {
+            fun evaluate(leftVal: ArgumentValue, rightVal: ArgumentValue): ArgumentValue {
+                return when {
+                    leftVal is ArgumentValue.IntValue && rightVal is ArgumentValue.IntValue -> {
+                        ArgumentValue.IntValue(leftVal.value + rightVal.value)
+                    }
 
-                leftVal is ArgumentValue.StringValue && rightVal is ArgumentValue.StringValue -> {
-                    ArgumentValue.StringValue(leftVal.value + rightVal.value)
-                }
+                    leftVal is ArgumentValue.BooleanValue && rightVal is ArgumentValue.BooleanValue -> {
+                        ArgumentValue.BooleanValue(leftVal.value.xor(rightVal.value))
+                    }
 
-                else -> throw EvaluateError(
-                    "Невозможно применить 'сложение' к ${leftVal::class.simpleName} и ${rightVal::class.simpleName}"
-                )
+                    leftVal is ArgumentValue.StringValue && rightVal is ArgumentValue.StringValue -> {
+                        ArgumentValue.StringValue(leftVal.value + rightVal.value)
+                    }
+
+                    else -> throw EvaluateError(
+                        "Невозможно применить 'сложение' к ${leftVal::class.simpleName} и ${rightVal::class.simpleName}"
+                    )
+                }
             }
         }
     }
 
     override fun toString(): String {
         return when (this) {
-            is NonTerminalArg -> this.nt + this.ntNum + this.atrName
+            is NonTerminalArg -> "${this.nt}.${this.ntNum}.${this.attrName}"
             is LookAhead -> {
                 when (this) {
-                    is LookAhead.NegativeLookahead -> "lookahead ∈ L(${looka.value})"
-                    is LookAhead.PositiveLookahead -> "lookahead ∉ L(${looka.value})"
+                    is LookAhead.PositiveLookahead -> "lookahead ∈ L(${looka.value})"
+                    is LookAhead.NegativeLookahead -> "lookahead ∉ L(${looka.value})"
                 }
             }
+
             is EqualResult -> "$left == $right"
             is NonEqualResult -> "$left != $right"
             is IntNumArg -> this.value.toString()
@@ -202,6 +211,7 @@ sealed class Argument {
             is AndArg -> "$left && $right"
             is OrArg -> "$left || $right"
             is Plus -> "$left + $right"
+            is BracketsArg -> "( $value )"
             TrueArg -> "true"
             FalseArg -> "false"
         }
@@ -222,6 +232,31 @@ sealed class Attribute {
         val rightArg: Argument,
     ) : Attribute() {
         override fun toString(): String = super.toString()
+
+        companion object {
+            private fun compareValues(leftVal: ArgumentValue, rightVal: ArgumentValue): Boolean {
+                return when {
+                    leftVal is ArgumentValue.IntValue && rightVal is ArgumentValue.IntValue ->
+                        leftVal.value == rightVal.value
+
+                    leftVal is ArgumentValue.BooleanValue && rightVal is ArgumentValue.BooleanValue ->
+                        leftVal.value == rightVal.value
+
+                    leftVal is ArgumentValue.StringValue && rightVal is ArgumentValue.StringValue ->
+                        leftVal.value == rightVal.value
+
+                    else -> throw EvaluateError(
+                        "Невозможно сравнить следующие два типа данных: " +
+                            "${leftVal::class.simpleName} и ${rightVal::class.simpleName}"
+                    )
+                }
+            }
+
+            fun evaluate(leftVal: ArgumentValue, rightVal: ArgumentValue): Boolean {
+                val result = compareValues(leftVal, rightVal)
+                return result
+            }
+        }
     }
 
     data class CheckNonEqual(
@@ -229,6 +264,94 @@ sealed class Attribute {
         val rightArg: Argument,
     ) : Attribute() {
         override fun toString(): String = super.toString()
+
+        companion object {
+            private fun compareValues(leftVal: ArgumentValue, rightVal: ArgumentValue): Boolean {
+                return when {
+                    leftVal is ArgumentValue.IntValue && rightVal is ArgumentValue.IntValue ->
+                        leftVal.value != rightVal.value
+
+                    leftVal is ArgumentValue.BooleanValue && rightVal is ArgumentValue.BooleanValue ->
+                        leftVal.value != rightVal.value
+
+                    leftVal is ArgumentValue.StringValue && rightVal is ArgumentValue.StringValue ->
+                        leftVal.value != rightVal.value
+
+                    else -> throw EvaluateError(
+                        "Невозможно сравнить следующие два типа данных: " +
+                            "${leftVal::class.simpleName} и ${rightVal::class.simpleName}"
+                    )
+                }
+            }
+
+            fun evaluate(leftVal: ArgumentValue, rightVal: ArgumentValue): Boolean {
+                val result = compareValues(leftVal, rightVal)
+                return result
+            }
+        }
+    }
+
+    data class CheckGreater(
+        val left: Argument,
+        val right: Argument,
+    ) : Attribute() {
+        override fun toString(): String = super.toString()
+        companion object {
+            private fun compareValues(leftVal: ArgumentValue, rightVal: ArgumentValue): Boolean {
+                return when {
+                    leftVal is ArgumentValue.IntValue && rightVal is ArgumentValue.IntValue ->
+                        leftVal.value > rightVal.value
+
+                    leftVal is ArgumentValue.BooleanValue && rightVal is ArgumentValue.BooleanValue ->
+                        leftVal.value > rightVal.value
+
+                    leftVal is ArgumentValue.StringValue && rightVal is ArgumentValue.StringValue ->
+                        leftVal.value > rightVal.value
+
+                    else -> throw EvaluateError(
+                        "Невозможно сравнить следующие два типа данных: " +
+                            "${leftVal::class.simpleName} и ${rightVal::class.simpleName}"
+                    )
+                }
+            }
+
+            fun evaluate(leftVal: ArgumentValue, rightVal: ArgumentValue): Boolean {
+                val result = compareValues(leftVal, rightVal)
+                return result
+            }
+        }
+    }
+
+    data class CheckSmaller(
+        val left: Argument,
+        val right: Argument,
+    ) : Attribute() {
+        override fun toString(): String = super.toString()
+
+        companion object {
+            private fun compareValues(leftVal: ArgumentValue, rightVal: ArgumentValue): Boolean {
+                return when {
+                    leftVal is ArgumentValue.IntValue && rightVal is ArgumentValue.IntValue ->
+                        leftVal.value < rightVal.value
+
+                    leftVal is ArgumentValue.BooleanValue && rightVal is ArgumentValue.BooleanValue ->
+                        leftVal.value < rightVal.value
+
+                    leftVal is ArgumentValue.StringValue && rightVal is ArgumentValue.StringValue ->
+                        leftVal.value < rightVal.value
+
+                    else -> throw EvaluateError(
+                        "Невозможно сравнить следующие два типа данных: " +
+                            "${leftVal::class.simpleName} и ${rightVal::class.simpleName}"
+                    )
+                }
+            }
+
+            fun evaluate(leftVal: ArgumentValue, rightVal: ArgumentValue): Boolean {
+                val result = compareValues(leftVal, rightVal)
+                return result
+            }
+        }
     }
 
     override fun toString(): String {
@@ -236,6 +359,8 @@ sealed class Attribute {
             is Assignment -> "$argument := $value"
             is CheckEqual -> "$leftArg == $rightArg"
             is CheckNonEqual -> "$leftArg != $rightArg"
+            is CheckGreater -> "$left > $right"
+            is CheckSmaller -> "$left < $right"
         }
     }
 }

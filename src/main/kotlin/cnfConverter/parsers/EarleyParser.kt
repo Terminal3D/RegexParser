@@ -1,10 +1,12 @@
 package cnfConverter.parsers
 
 import org.example.cnfConverter.models.Argument
+import org.example.cnfConverter.models.ArgumentValue
 import org.example.cnfConverter.models.Attribute
 import org.example.cnfConverter.models.CFG
 import org.example.cnfConverter.models.Symbol
 import org.example.cnfConverter.models.TokenType
+import org.w3c.dom.Attr
 
 data class ParseTree(
     val symbol: String,
@@ -243,63 +245,212 @@ class EarleyParser(private val cfg: CFG) {
     private fun ParseTree.checkAttr(
         word: String,
         pos: Int = 0
-    ): Pair<Boolean, Int> {
+    ): Triple<Boolean, Int, MutableMap<String, ArgumentValue>> {
         var currentPos = pos
-
-        if (ruleIndex != null) {
-            val (_, attrs) = cfg.grammar[symbol]!![ruleIndex]
-
-            for (attr in attrs) {
-                when (attr) {
-                    is Attribute.CheckEqual -> {
-                        if (attr.leftArg is Argument.LookAhead) {
-                            val lookAheadNt = attr.leftArg.looka.value
-                            val remainder = word.substring(currentPos)
-                            val newGrammar = cfg.grammar.toMutableMap()
-                            val matchResult = EarleyParser(
-                                CFG(
-                                    newGrammar,
-                                    startSymbol = lookAheadNt,
-                                    terminals = cfg.terminals
-                                )
-                            )
-                            // Сразу добавляю пустую строку для пустого лукахеда
-                            val substring = mutableListOf("")
-                            for (i in remainder.indices) {
-                                substring.add(remainder.substring(startIndex = 0, endIndex = i + 1))
-                            }
-                            val ok = substring.any {
-                                val t = cachedLookaheadChecks
-                                if (cachedLookaheadChecks[lookAheadNt] == null) {
-                                    cachedLookaheadChecks[lookAheadNt] = mutableMapOf()
-                                }
-                                cachedLookaheadChecks[lookAheadNt]!!.getOrPut(it, {
-                                    matchResult.parse(it, checkAttr = true, clearCache = false)
-                                })
-                            }
-                            if (!ok) return Pair(false, currentPos)
-                        }
-                    }
-
-                    else -> {}
-                }
-            }
-        }
 
         if (ruleIndex == null) {
             if (currentPos >= word.length) {
-                return Pair(false, currentPos)
+                return Triple(false, currentPos, mutableMapOf())
             }
             currentPos++
-            return Pair(true, currentPos)
-        } else {
-            for (child in children) {
-                val (okChild, newPos) = child.checkAttr(word, currentPos)
-                if (!okChild) return Pair(false, newPos)
-                currentPos = newPos
-            }
-            return Pair(true, currentPos)
+            return Triple(true, currentPos, mutableMapOf())
         }
+
+        val attributeContext = mutableMapOf<Int, MutableMap<String, ArgumentValue>>()
+        var ntIndex = 0
+        children.forEach { child ->
+            val isNT = child.ruleIndex != null
+            if (isNT) ntIndex++
+            val (childOk, newPos, childContext) = child.checkAttr(word, currentPos)
+            if (!childOk) return Triple(false, newPos, mutableMapOf())
+            currentPos = newPos
+            if (isNT) {
+                attributeContext[ntIndex] = childContext
+            }
+        }
+
+        val (_, attrs) = cfg.grammar[symbol]!![ruleIndex]
+
+        for (attr in attrs) {
+            when (attr) {
+                is Attribute.CheckEqual -> {
+                    val leftVal = evaluateArgument(attr.leftArg, word, currentPos, attributeContext)
+                    val rightVal = evaluateArgument(attr.rightArg, word, currentPos, attributeContext)
+                    if (!Attribute.CheckEqual.evaluate(leftVal, rightVal)) {
+                        return Triple(false, currentPos, mutableMapOf())
+                    }
+                }
+
+                is Attribute.CheckNonEqual -> {
+                    val leftVal = evaluateArgument(attr.leftArg, word, currentPos, attributeContext)
+                    val rightVal = evaluateArgument(attr.rightArg, word, currentPos, attributeContext)
+                    if (!Attribute.CheckNonEqual.evaluate(leftVal, rightVal)) {
+                        return Triple(false, currentPos, mutableMapOf())
+                    }
+                }
+
+                is Attribute.Assignment -> {
+                    val argument = (attr.argument as? Argument.NonTerminalArg)
+                        ?: throw Exception("Присваивать можно только к атрибуту нетерминала")
+                    if (attributeContext[argument.ntNum] == null) attributeContext[argument.ntNum] = mutableMapOf()
+                    attributeContext[argument.ntNum]!!.put(
+                        argument.attrName,
+                        evaluateArgument(
+                            argument = attr.value,
+                            currentPos = currentPos,
+                            context = attributeContext,
+                            word = word
+                        )
+                    )
+                }
+
+                is Attribute.CheckGreater -> {
+                    val leftVal = evaluateArgument(attr.left, word, currentPos, attributeContext)
+                    val rightVal = evaluateArgument(attr.right, word, currentPos, attributeContext)
+                    if (!Attribute.CheckGreater.evaluate(leftVal, rightVal)) {
+                        return Triple(false, currentPos, mutableMapOf())
+                    }
+                }
+                is Attribute.CheckSmaller -> {
+                    val leftVal = evaluateArgument(attr.left, word, currentPos, attributeContext)
+                    val rightVal = evaluateArgument(attr.right, word, currentPos, attributeContext)
+                    if (!Attribute.CheckSmaller.evaluate(leftVal, rightVal)) {
+                        return Triple(false, currentPos, mutableMapOf())
+                    }
+                }
+            }
+        }
+        return Triple(true, currentPos, attributeContext[0] ?: mutableMapOf())
     }
 
+    private fun evaluateArgument(
+        argument: Argument,
+        word: String,
+        currentPos: Int,
+        context: MutableMap<Int, MutableMap<String, ArgumentValue>>
+    ): ArgumentValue {
+        return when (argument) {
+            is Argument.NonTerminalArg -> {
+                val atrName = argument.attrName
+                context[argument.ntNum]?.get(atrName)
+                    ?: throw Exception("Атрибут $atrName не проинициализирован на момент обращения у $argument")
+            }
+
+            is Argument.EqualResult -> Argument.EqualResult.evaluate(
+                leftVal = evaluateArgument(
+                    argument = argument.left,
+                    word = word,
+                    currentPos = currentPos,
+                    context = context
+                ),
+                rightVal = evaluateArgument(
+                    argument = argument.right,
+                    word = word,
+                    currentPos = currentPos,
+                    context = context
+                )
+            )
+
+            is Argument.NonEqualResult -> Argument.NonEqualResult.evaluate(
+                leftVal = evaluateArgument(
+                    argument = argument.left,
+                    word = word,
+                    currentPos = currentPos,
+                    context = context
+                ),
+                rightVal = evaluateArgument(
+                    argument = argument.right,
+                    word = word,
+                    currentPos = currentPos,
+                    context = context
+                )
+            )
+
+            is Argument.AndArg -> Argument.AndArg.evaluate(
+                leftVal = evaluateArgument(
+                    argument = argument.left,
+                    word = word,
+                    currentPos = currentPos,
+                    context = context
+                ),
+                rightVal = evaluateArgument(
+                    argument = argument.right,
+                    word = word,
+                    currentPos = currentPos,
+                    context = context
+                )
+            )
+
+            is Argument.OrArg -> Argument.OrArg.evaluate(
+                leftVal = evaluateArgument(
+                    argument = argument.left,
+                    word = word,
+                    currentPos = currentPos,
+                    context = context
+                ),
+                rightVal = evaluateArgument(
+                    argument = argument.right,
+                    word = word,
+                    currentPos = currentPos,
+                    context = context
+                )
+            )
+
+            is Argument.Plus -> Argument.Plus.evaluate(
+                leftVal = evaluateArgument(
+                    argument = argument.left,
+                    word = word,
+                    currentPos = currentPos,
+                    context = context
+                ),
+                rightVal = evaluateArgument(
+                    argument = argument.right,
+                    word = word,
+                    currentPos = currentPos,
+                    context = context
+                )
+            )
+
+            is Argument.IntNumArg -> argument.value
+            is Argument.StringArg -> argument.value
+            is Argument.BracketsArg -> evaluateArgument(
+                argument = argument.value,
+                word = word,
+                currentPos = currentPos,
+                context = context
+            )
+            Argument.FalseArg -> ArgumentValue.BooleanValue(false)
+            Argument.TrueArg -> ArgumentValue.BooleanValue(true)
+            is Argument.LookAhead -> {
+                val lookAheadNt = argument.looka.value
+                val remainder = word.substring(currentPos)
+                val newGrammar = cfg.grammar.toMutableMap()
+                val matchResult = EarleyParser(
+                    CFG(
+                        newGrammar,
+                        startSymbol = lookAheadNt,
+                        terminals = cfg.terminals
+                    )
+                )
+                // Сразу добавляю пустую строку для пустого лукахеда
+                val substring = mutableListOf("")
+                for (i in remainder.indices) {
+                    substring.add(remainder.substring(startIndex = 0, endIndex = i + 1))
+                }
+                val ok = substring.any {
+                    val t = cachedLookaheadChecks
+                    if (cachedLookaheadChecks[lookAheadNt] == null) {
+                        cachedLookaheadChecks[lookAheadNt] = mutableMapOf()
+                    }
+                    cachedLookaheadChecks[lookAheadNt]!!.getOrPut(it, {
+                        matchResult.parse(it, checkAttr = true, clearCache = false)
+                    })
+                }
+                when (argument) {
+                    is Argument.LookAhead.NegativeLookahead -> ArgumentValue.BooleanValue(!ok)
+                    is Argument.LookAhead.PositiveLookahead -> ArgumentValue.BooleanValue(ok)
+                }
+            }
+        }
+    }
 }

@@ -4,6 +4,7 @@ import org.example.cnfConverter.models.Attribute
 import org.example.cnfConverter.models.CFG
 import org.example.cnfConverter.models.Symbol
 import org.example.cnfConverter.models.TokenType
+import org.example.cnfConverter.parsers.attribute.AttributeParser
 
 class GrammarParser {
 
@@ -21,12 +22,12 @@ class GrammarParser {
 
         val lines = grammar.lines().filter { it.trim().isNotEmpty() }
 
-        for (line in lines) {
-            val (lhs, rhs) = parseRule(line)
+        lines.forEachIndexed { lineNum, line ->
+            val (lhs, rhs, attrs) = parseRule(line, lineNum + 1)
             if (startSymbol.isEmpty()) {
                 startSymbol = lhs
             }
-            ruleMap.getOrPut(lhs) { mutableListOf() }.add(Pair(rhs, emptyList()))
+            ruleMap.getOrPut(lhs) { mutableListOf() }.add(Pair(rhs, attrs))
         }
 
         return CFG(
@@ -36,17 +37,34 @@ class GrammarParser {
         )
     }
 
-    private fun parseRule(line: String): Pair<String, List<Symbol>> {
+    private fun parseRule(line: String, lineNum: Int): Triple<String, List<Symbol>, List<Attribute>> {
 
-        val parts = line.split("->", limit = 2).map { it.trim() }
+        val split = line.split(";")
+        val grammarPart = split[0]
+        val attributePart = split.getOrNull(1) ?: ""
+        val attrs = parseAttributePart(attributePart.trim(), lineNum)
+        val parsedGrammar = parseGrammarPart(grammarPart, line)
+        return Triple(parsedGrammar.first, parsedGrammar.second, attrs)
+    }
 
-        if (parts.size != 2) {
+    private fun parseAttributePart(attributePart: String, lineNum: Int) : List<Attribute> {
+        if (attributePart.isEmpty()) return emptyList()
+        val attributeParts = attributePart.split(",").map { it.trim() }
+        return attributeParts.map { attr ->
+            AttributeParser.parse(AttributeTokenizer.tokenize(attr, lineNum))
+        }
+    }
+
+    private fun parseGrammarPart(grammarPart: String, line: String) : Pair<String, List<Symbol>> {
+        val grammarParts = grammarPart.split("->", limit = 2).map { it.trim() }
+
+        if (grammarParts.size != 2) {
             throw IllegalArgumentException("Неверный формат правила (отсутствует '->'): '$line'")
         }
 
-        val lhs = parseNT(parts[0]).value
+        val lhs = parseNT(grammarParts[0]).value
 
-        val rhs = parseRhs(parts[1])
+        val rhs = parseRhs(grammarParts[1])
 
         return Pair(lhs, rhs)
     }

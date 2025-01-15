@@ -68,7 +68,8 @@ object Tokenizer {
                         }
 
                         next2Symbol == ':' -> tokens.add(Token.NonCatchGroup(pos))
-                        next2Symbol == '=' -> tokens.add(Token.LookAhead(pos))
+                        next2Symbol == '=' -> tokens.add(Token.PositiveLookAhead(pos))
+                        next2Symbol == '!' -> tokens.add(Token.NegativeLookAhead(pos))
                         else -> throw TokenizeException(next2Symbol, pos)
                     }
                 }

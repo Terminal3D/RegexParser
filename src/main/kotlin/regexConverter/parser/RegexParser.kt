@@ -96,13 +96,22 @@ object RegexParser {
                 linkNode
             }
 
-            is Token.LookAhead -> {
+            is Token.PositiveLookAhead -> {
                 if (inLookAhead) throw Exception("Нельзя вкладывать lookahead в lookahead")
                 inLookAhead = true
                 val inside = parseRg()
                 assertRightBracket(inside)
                 inLookAhead = false
-                RegexNode.LookAheadNode(value = RegexNode.NonCatchGroupNode(inside))
+                RegexNode.PositiveLookAheadNode(value = RegexNode.NonCatchGroupNode(inside))
+            }
+
+            is Token.NegativeLookAhead -> {
+                if (inLookAhead) throw Exception("Нельзя вкладывать lookahead в lookahead")
+                inLookAhead = true
+                val inside = parseRg()
+                assertRightBracket(inside)
+                inLookAhead = false
+                RegexNode.NegativeLookAheadNode(value = RegexNode.NonCatchGroupNode(inside))
             }
 
             is Token.NewCatchGroup -> {
